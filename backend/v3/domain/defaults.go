@@ -5,15 +5,17 @@ import (
 	"github.com/zitadel/zitadel/backend/v3/storage/eventstore"
 	"github.com/zitadel/zitadel/internal/config/systemdefaults"
 	"github.com/zitadel/zitadel/internal/crypto"
+	"github.com/zitadel/zitadel/internal/webauthn"
 )
 
 var (
-	pool database.Pool
-	legacyEventstore  eventstore.LegacyEventstore
-	sysConfig         systemdefaults.SystemDefaults
-	passwordHasher    *crypto.Hasher
-	idpEncryptionAlgo crypto.EncryptionAlgorithm
+	pool                  database.Pool
+	legacyEventstore      eventstore.LegacyEventstore
+	sysConfig             systemdefaults.SystemDefaults
+	passwordHasher        *crypto.Hasher
+	idpEncryptionAlgo     crypto.EncryptionAlgorithm
 	sessionTokenDecryptor SessionTokenDecryptor
+	webauthnConfig        *webauthn.Config
 )
 
 func SetPool(p database.Pool) {
@@ -38,4 +40,8 @@ func SetIDPEncryptionAlgorithm(idpEncryptionAlg crypto.EncryptionAlgorithm) {
 
 func SetSessionTokenDecryptor(decryptor SessionTokenDecryptor) {
 	sessionTokenDecryptor = decryptor
+}
+
+func SetWebAuthNConfig(cfg *webauthn.Config) {
+	webauthnConfig = cfg
 }
