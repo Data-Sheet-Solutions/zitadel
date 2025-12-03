@@ -16,6 +16,7 @@ var (
 	sysConfig         systemdefaults.SystemDefaults
 	passwordHasher    *crypto.Hasher
 	idpEncryptionAlgo crypto.EncryptionAlgorithm
+	mfaEncryptionAlgo crypto.EncryptionAlgorithm
 
 	webauthnConfig *webauthn.Config
 )
@@ -42,4 +43,8 @@ func SetIDPEncryptionAlgorithm(idpEncryptionAlg crypto.EncryptionAlgorithm) {
 
 func SetWebAuthNConfig(cfg *webauthn.Config) {
 	webauthnConfig = cfg
+}
+
+func SetMFAEncryptionAlgorithm(mfaEncryptionAlg crypto.EncryptionAlgorithm) {
+	mfaEncryptionAlgo = mfaEncryptionAlg
 }
