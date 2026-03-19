@@ -1,5 +1,5 @@
+import { createConnectTransport } from "@connectrpc/connect-node";
 import { Client, create, Duration } from "@zitadel/client";
-import { createServerTransport as libCreateServerTransport } from "@zitadel/client/node";
 import { makeReqCtx } from "@zitadel/client/v2";
 import { IdentityProviderService } from "@zitadel/proto/zitadel/idp/v2/idp_service_pb";
 import { OrganizationSchema, TextQueryMethod } from "@zitadel/proto/zitadel/object/v2/object_pb";
@@ -30,9 +30,15 @@ import {
   VerifyU2FRegistrationRequest,
 } from "@zitadel/proto/zitadel/user/v2/user_service_pb";
 import { getTranslations } from "next-intl/server";
-import { getUserAgent } from "./fingerprint";
 
+import { getUserAgent } from "./fingerprint";
+import { createLogger } from "./logger";
+
+import { otelGrpcInterceptor } from "@/lib/grpc/interceptors/otel";
+import { Interceptor } from "@connectrpc/connect";
 import { createServiceForHost } from "./service";
+
+const logger = createLogger("zitadel");
 
 const useCache = process.env.API_CACHE_ENABLED !== "false";
 
@@ -45,8 +51,8 @@ try {
   console.error("Failed to parse API_CACHE_CONFIG", e);
 }
 
-const defaultCacheTTL = (cacheConfig.default ?? 15) * 60 * 1000; // 15 mins default
-const longCacheTTL = (cacheConfig.long ?? 60) * 60 * 1000; // 1 hour default
+const defaultCacheTTL = (cacheConfig.defaultMinutes ?? 15) * 60 * 1000; // 15 mins default
+const longCacheTTL = (cacheConfig.longMinutes ?? 60) * 60 * 1000; // 1 hour default
 
 /**
  * Helper to determine the TTL for a specific API method.
@@ -59,8 +65,6 @@ function getTTLForKey(keyPrefix: string, fallbackTtl: number) {
   }
   return fallbackTtl;
 }
-
-
 
 const promiseCache = new Map<string, { promise: Promise<any>; expiresAt: number }>();
 
@@ -82,9 +86,7 @@ function freshCache<T>(key: string, fetcher: () => Promise<T>, ttlMs: number): P
   const promise = fetcher();
   promiseCache.set(key, { promise, expiresAt: now + ttlMs });
 
-  promise.catch(() => {
-    promiseCache.delete(key);
-  });
+  promise.catch(() => promiseCache.delete(key));
 
   return promise;
 }
@@ -121,7 +123,11 @@ export async function getHostedLoginTranslation({
       });
   };
 
-  return useCache ? freshCache(`getHostedLoginTranslation-${organization || "instance"}-${locale || "default"}`, fetcher, getTTLForKey("getHostedLoginTranslation", longCacheTTL)) : fetcher();
+  return freshCache(
+    `getHostedLoginTranslation-${organization || "instance"}-${locale || "default"}`,
+    fetcher,
+    getTTLForKey("getHostedLoginTranslation", longCacheTTL),
+  );
 }
 
 export async function getBrandingSettings({
@@ -138,7 +144,11 @@ export async function getBrandingSettings({
       .then((resp) => (resp.settings ? resp.settings : undefined));
   };
 
-  return useCache ? freshCache(`getBrandingSettings-${organization || "instance"}`, fetcher, getTTLForKey("getBrandingSettings", longCacheTTL)) : fetcher();
+  return freshCache(
+    `getBrandingSettings-${organization || "instance"}`,
+    fetcher,
+    getTTLForKey("getBrandingSettings", longCacheTTL),
+  );
 }
 
 export async function getLoginSettings({
@@ -155,7 +165,11 @@ export async function getLoginSettings({
       .then((resp) => (resp.settings ? resp.settings : undefined));
   };
 
-  return useCache ? freshCache(`getLoginSettings-${organization || "instance"}`, fetcher, getTTLForKey("getLoginSettings", defaultCacheTTL)) : fetcher();
+  return freshCache(
+    `getLoginSettings-${organization || "instance"}`,
+    fetcher,
+    getTTLForKey("getLoginSettings", defaultCacheTTL),
+  );
 }
 
 export async function getSecuritySettings({ serviceConfig }: WithServiceConfig) {
@@ -163,10 +177,9 @@ export async function getSecuritySettings({ serviceConfig }: WithServiceConfig) 
     const settingsService: Client<typeof SettingsService> = await createServiceForHost(SettingsService, serviceConfig);
 
     return settingsService.getSecuritySettings({}).then((resp) => (resp.settings ? resp.settings : undefined));
+  };
 
-    };
-
-  return useCache ? freshCache(`getSecuritySettings-${"instance"}`, fetcher, getTTLForKey("getSecuritySettings", defaultCacheTTL)) : fetcher();
+  return freshCache(`getSecuritySettings-instance`, fetcher, getTTLForKey("getSecuritySettings", defaultCacheTTL));
 }
 
 export async function getLockoutSettings({ serviceConfig, orgId }: WithServiceConfig<{ orgId?: string }>) {
@@ -176,10 +189,13 @@ export async function getLockoutSettings({ serviceConfig, orgId }: WithServiceCo
     return settingsService
       .getLockoutSettings({ ctx: makeReqCtx(orgId) }, {})
       .then((resp) => (resp.settings ? resp.settings : undefined));
+  };
 
-    };
-
-  return useCache ? freshCache(`getLockoutSettings-${orgId || "instance"}`, fetcher, getTTLForKey("getLockoutSettings", defaultCacheTTL)) : fetcher();
+  return freshCache(
+    `getLockoutSettings-${orgId || "instance"}`,
+    fetcher,
+    getTTLForKey("getLockoutSettings", defaultCacheTTL),
+  );
 }
 
 export async function getPasswordExpirySettings({ serviceConfig, orgId }: WithServiceConfig<{ orgId?: string }>) {
@@ -189,9 +205,13 @@ export async function getPasswordExpirySettings({ serviceConfig, orgId }: WithSe
     return settingsService
       .getPasswordExpirySettings({ ctx: makeReqCtx(orgId) }, {})
       .then((resp) => (resp.settings ? resp.settings : undefined));
-    };
+  };
 
-  return useCache ? freshCache(`getPasswordExpirySettings-${orgId || "instance"}`, fetcher, getTTLForKey("getPasswordExpirySettings", defaultCacheTTL)) : fetcher();
+  return freshCache(
+    `getPasswordExpirySettings-${orgId || "instance"}`,
+    fetcher,
+    getTTLForKey("getPasswordExpirySettings", defaultCacheTTL),
+  );
 }
 
 export async function listIDPLinks({ serviceConfig, userId }: WithServiceConfig<{ userId: string }>) {
@@ -228,9 +248,9 @@ export async function getAllowedLanguages({ serviceConfig }: WithServiceConfig) 
         defaultLanguage: resp.defaultLanguage,
       };
     });
-  }
+  };
 
-  return useCache ? freshCache(`getGeneralSettings-${"instance"}`, fetcher, getTTLForKey("getGeneralSettings", longCacheTTL)) : fetcher();
+  return freshCache(`getGeneralSettings-instance`, fetcher, getTTLForKey("getGeneralSettings", longCacheTTL));
 }
 
 export async function getLegalAndSupportSettings({
@@ -247,7 +267,11 @@ export async function getLegalAndSupportSettings({
       .then((resp) => (resp.settings ? resp.settings : undefined));
   };
 
-  return useCache ? freshCache(`getLegalAndSupportSettings-${organization || "instance"}`, fetcher, getTTLForKey("getLegalAndSupportSettings", longCacheTTL)) : fetcher();
+  return freshCache(
+    `getLegalAndSupportSettings-${organization || "instance"}`,
+    fetcher,
+    getTTLForKey("getLegalAndSupportSettings", longCacheTTL),
+  );
 }
 
 export async function getPasswordComplexitySettings({
@@ -264,7 +288,11 @@ export async function getPasswordComplexitySettings({
       .then((resp) => (resp.settings ? resp.settings : undefined));
   };
 
-  return useCache ? freshCache(`getPasswordComplexitySettings-${organization || "instance"}`, fetcher, getTTLForKey("getPasswordComplexitySettings", defaultCacheTTL)) : fetcher();
+  return freshCache(
+    `getPasswordComplexitySettings-${organization || "instance"}`,
+    fetcher,
+    getTTLForKey("getPasswordComplexitySettings", defaultCacheTTL),
+  );
 }
 
 export async function createSessionFromChecksAndChallenges({
@@ -800,23 +828,29 @@ export async function searchUsers({
 }
 
 export async function getDefaultOrg({ serviceConfig }: WithServiceConfig): Promise<Organization | null> {
-  const orgService: Client<typeof OrganizationService> = await createServiceForHost(OrganizationService, serviceConfig);
+  const fetcher = async () => {
+    const orgService: Client<typeof OrganizationService> = await createServiceForHost(OrganizationService, serviceConfig);
 
-  return orgService
-    .listOrganizations(
-      {
-        queries: [
-          {
-            query: {
-              case: "defaultQuery",
-              value: {},
+    return orgService
+      .listOrganizations(
+        {
+          queries: [
+            {
+              query: {
+                case: "defaultQuery",
+                value: {},
+              },
             },
-          },
-        ],
-      },
-      {},
-    )
-    .then((resp) => (resp?.result && resp.result[0] ? resp.result[0] : null));
+          ],
+        },
+        {},
+      )
+      .then((resp) => (resp?.result && resp.result[0] ? resp.result[0] : null));
+  };
+
+  return useCache
+    ? freshCache(`getDefaultOrg-${"instance"}`, fetcher, getTTLForKey("getDefaultOrg", defaultCacheTTL))
+    : fetcher();
 }
 
 export async function getOrgsByDomain({ serviceConfig, domain }: WithServiceConfig<{ domain: string }>) {
@@ -1298,48 +1332,52 @@ export interface ServiceConfig {
 /**
  * Base type that all function parameters must extend to ensure serviceConfig is always required
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type WithServiceConfig<T = {}> = T & {
   serviceConfig: ServiceConfig;
 };
 
 export function createServerTransport(token: string, serviceConfig: ServiceConfig) {
-  return libCreateServerTransport(token, {
+  const authorizationInterceptor: Interceptor = (next) => (req) => {
+    if (!req.header.get("Authorization")) {
+      req.header.set("Authorization", `Bearer ${token}`);
+    }
+    return next(req);
+  };
+
+  const headerInterceptor: Interceptor = (next) => (req) => {
+    // Apply headers from serviceConfig
+    if (serviceConfig.instanceHost) {
+      req.header.set("x-zitadel-instance-host", serviceConfig.instanceHost);
+    }
+    if (serviceConfig.publicHost) {
+      req.header.set("x-zitadel-public-host", serviceConfig.publicHost);
+    }
+
+    // Apply headers from CUSTOM_REQUEST_HEADERS environment variable
+    if (process.env.CUSTOM_REQUEST_HEADERS) {
+      process.env.CUSTOM_REQUEST_HEADERS.split(",").forEach((header) => {
+        const kv = header.indexOf(":");
+        if (kv > 0) {
+          const key = header.slice(0, kv).trim();
+          const value = header.slice(kv + 1).trim();
+          if (value) {
+            req.header.set(key, value);
+          } else {
+            req.header.delete(key);
+          }
+        } else {
+          logger.warn("Skipping malformed header", { header });
+        }
+      });
+    }
+
+    return next(req);
+  };
+
+  return createConnectTransport({
+    httpVersion: "1.1",
     baseUrl: serviceConfig.baseUrl,
-    interceptors:
-      !process.env.CUSTOM_REQUEST_HEADERS && !serviceConfig.instanceHost && !serviceConfig.publicHost
-        ? undefined
-        : [
-            (next) => {
-              return (req) => {
-                // Apply headers from serviceConfig
-                if (serviceConfig.instanceHost) {
-                  req.header.set("x-zitadel-instance-host", serviceConfig.instanceHost);
-                }
-                if (serviceConfig.publicHost) {
-                  req.header.set("x-zitadel-public-host", serviceConfig.publicHost);
-                }
-
-                // Apply headers from CUSTOM_REQUEST_HEADERS environment variable
-                if (process.env.CUSTOM_REQUEST_HEADERS) {
-                  process.env.CUSTOM_REQUEST_HEADERS.split(",").forEach((header) => {
-                    const kv = header.indexOf(":");
-                    if (kv > 0) {
-                      const key = header.slice(0, kv).trim();
-                      const value = header.slice(kv + 1).trim();
-                      if (value) {
-                        req.header.set(key, value);
-                      } else {
-                        req.header.delete(key);
-                      }
-                    } else {
-                      console.warn(`Skipping malformed header: ${header}`);
-                    }
-                  });
-                }
-
-                return next(req);
-              };
-            },
-          ],
+    interceptors: [otelGrpcInterceptor, authorizationInterceptor, headerInterceptor],
   });
 }
