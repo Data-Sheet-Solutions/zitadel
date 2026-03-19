@@ -74,7 +74,14 @@ export async function proxy(request: NextRequest) {
       ? securitySettings.embeddedIframe.allowedOrigins
       : undefined;
 
-  responseHeaders.set("Content-Security-Policy", buildCSP({ serviceUrl: serviceConfig.baseUrl, iframeOrigins }));
+  const allowedOrigins = process.env.SERVER_ACTION_ALLOWED_ORIGINS
+    ? process.env.SERVER_ACTION_ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+    : undefined;
+
+  responseHeaders.set(
+    "Content-Security-Policy",
+    buildCSP({ serviceUrl: serviceConfig.baseUrl, iframeOrigins, allowedOrigins }),
+  );
 
   if (!iframeOrigins) {
     responseHeaders.set("X-Frame-Options", "deny");

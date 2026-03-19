@@ -60,4 +60,28 @@ describe("buildCSP", () => {
     expect(csp).toContain("style-src 'self' 'unsafe-inline'");
     expect(csp).toContain("object-src 'none'");
   });
+
+  test("adds allowedOrigins to img-src", () => {
+    const csp = buildCSP({
+      allowedOrigins: ["https://login.example.com", "https://cdn.example.com"],
+    });
+
+    expect(csp).toContain("img-src 'self' https://login.example.com https://cdn.example.com");
+  });
+
+  test("combines serviceUrl and allowedOrigins in img-src", () => {
+    const csp = buildCSP({
+      serviceUrl: "https://zitadel.mycompany.com",
+      allowedOrigins: ["https://login.mycompany.com"],
+    });
+
+    expect(csp).toContain("img-src 'self' https://zitadel.mycompany.com https://login.mycompany.com");
+  });
+
+  test("empty allowedOrigins does not change img-src", () => {
+    const csp = buildCSP({ allowedOrigins: [] });
+
+    expect(csp).toContain("img-src 'self'");
+    expect(csp).toMatch(/img-src 'self'(?:;|$)/);
+  });
 });

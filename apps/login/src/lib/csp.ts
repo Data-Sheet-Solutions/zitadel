@@ -12,6 +12,7 @@ const BASE_DIRECTIVES: Record<string, string[]> = {
 export interface CSPOptions {
   serviceUrl?: string;
   iframeOrigins?: string[];
+  allowedOrigins?: string[];
 }
 
 export function buildCSP(options: CSPOptions = {}): string {
@@ -19,6 +20,10 @@ export function buildCSP(options: CSPOptions = {}): string {
 
   if (options.serviceUrl) {
     directives["img-src"] = [...directives["img-src"], options.serviceUrl];
+  }
+
+  if (options.allowedOrigins && options.allowedOrigins.length > 0) {
+    directives["img-src"] = [...directives["img-src"], ...options.allowedOrigins];
   }
 
   if (options.iframeOrigins && options.iframeOrigins.length > 0) {

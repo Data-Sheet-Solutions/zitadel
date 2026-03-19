@@ -44,7 +44,14 @@ function setCSPHeaders(
       ? securitySettings.embeddedIframe.allowedOrigins
       : undefined;
 
-  response.headers.set("Content-Security-Policy", buildCSP({ serviceUrl: serviceConfig.baseUrl, iframeOrigins }));
+  const allowedOrigins = process.env.SERVER_ACTION_ALLOWED_ORIGINS
+    ? process.env.SERVER_ACTION_ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+    : undefined;
+
+  response.headers.set(
+    "Content-Security-Policy",
+    buildCSP({ serviceUrl: serviceConfig.baseUrl, iframeOrigins, allowedOrigins }),
+  );
 
   if (!iframeOrigins) {
     response.headers.set("X-Frame-Options", "deny");
