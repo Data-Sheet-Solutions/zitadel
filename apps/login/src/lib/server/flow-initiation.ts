@@ -72,6 +72,40 @@ const gotoAccounts = ({
   return NextResponse.redirect(accountsUrl);
 };
 
+const gotoLoginname = ({
+  request,
+  requestId,
+  organization,
+  suffix,
+  loginName,
+  submit,
+}: {
+  request: NextRequest;
+  requestId: string;
+  organization?: string;
+  suffix?: string;
+  loginName?: string;
+  submit?: boolean;
+}): NextResponse<unknown> => {
+  const loginNameUrl = constructUrl(request, "/loginname");
+
+  loginNameUrl.searchParams.set("requestId", requestId);
+  if (loginName) {
+    loginNameUrl.searchParams.set("loginName", loginName);
+  }
+  if (submit) {
+    loginNameUrl.searchParams.set("submit", "true");
+  }
+  if (organization) {
+    loginNameUrl.searchParams.set("organization", organization);
+  }
+  if (suffix) {
+    loginNameUrl.searchParams.set("suffix", suffix);
+  }
+
+  return NextResponse.redirect(loginNameUrl);
+};
+
 export interface FlowInitiationParams {
   serviceConfig: ServiceConfig;
   requestId: string;
@@ -224,10 +258,13 @@ export async function handleOIDCFlowInitiation(params: FlowInitiationParams): Pr
   // use existing session and hydrate it for oidc
   if (authRequest && sessions.length) {
     if (authRequest.prompt.includes(Prompt.SELECT_ACCOUNT)) {
-      return gotoAccounts({
+      // Fork behavior: skip the account picker and always land on the login form.
+      return gotoLoginname({
         request,
-        requestId: `oidc_${authRequest.id}`,
+        requestId: requestId,
         organization,
+        suffix,
+        loginName: authRequest.loginHint,
       });
     } else if (authRequest.prompt.includes(Prompt.LOGIN)) {
       if (authRequest.loginHint) {
@@ -252,19 +289,13 @@ export async function handleOIDCFlowInitiation(params: FlowInitiationParams): Pr
         }
       }
 
-      const loginNameUrl = constructUrl(request, "/loginname");
-      loginNameUrl.searchParams.set("requestId", requestId);
-
-      if (authRequest.loginHint) {
-        loginNameUrl.searchParams.set("loginName", authRequest.loginHint);
-      }
-      if (organization) {
-        loginNameUrl.searchParams.set("organization", organization);
-      }
-      if (suffix) {
-        loginNameUrl.searchParams.set("suffix", suffix);
-      }
-      return NextResponse.redirect(loginNameUrl);
+      return gotoLoginname({
+        request,
+        requestId,
+        organization,
+        suffix,
+        loginName: authRequest.loginHint,
+      });
     } else if (authRequest.prompt.includes(Prompt.NONE)) {
       const securitySettings = await getSecuritySettings({ serviceConfig });
 
@@ -360,23 +391,14 @@ export async function handleOIDCFlowInitiation(params: FlowInitiationParams): Pr
       }
     }
   } else {
-    const loginNameUrl = constructUrl(request, "/loginname");
-    loginNameUrl.searchParams.set("requestId", requestId);
-
-    if (authRequest?.loginHint) {
-      loginNameUrl.searchParams.set("loginName", authRequest.loginHint);
-      loginNameUrl.searchParams.set("submit", "true");
-    }
-
-    if (organization) {
-      loginNameUrl.searchParams.append("organization", organization);
-    }
-
-    if (suffix) {
-      loginNameUrl.searchParams.append("suffix", suffix);
-    }
-
-    return NextResponse.redirect(loginNameUrl);
+    return gotoLoginname({
+      request,
+      requestId,
+      organization,
+      suffix,
+      loginName: authRequest?.loginHint,
+      submit: !!authRequest?.loginHint,
+    });
   }
 }
 

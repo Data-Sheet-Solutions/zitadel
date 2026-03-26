@@ -27,6 +27,11 @@ export function DynamicTheme({
   branding?: BrandingSettings;
 }) {
   const { isSideBySide } = useResponsiveLayout();
+  const configuredBasePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  const normalizedBasePath = configuredBasePath
+    ? `${configuredBasePath.startsWith("/") ? "" : "/"}${configuredBasePath.replace(/\/$/, "")}`
+    : "";
+  const modalHeaderLogoUrl = `${normalizedBasePath}/logo/datasheetsolutions_small.png`;
 
   // Resolve children immediately to avoid passing functions through React
   const actualChildren: ReactNode = React.useMemo(() => {
@@ -97,33 +102,35 @@ export function DynamicTheme({
 
             return (
               <div className="relative mx-auto w-full max-w-[440px] px-4 py-4">
-                <Card>
-                  <div className="mx-auto flex flex-col items-center space-y-8">
-                    <div className="relative -mb-4 flex flex-row items-center justify-center">
-                      {branding && (
-                        <Logo
-                          lightSrc={branding.lightTheme?.logoUrl}
-                          darkSrc={branding.darkTheme?.logoUrl}
-                          height={150}
-                          width={150}
-                        />
-                      )}
+                <Card padding="p-0" className="overflow-hidden shadow-2xl">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-4 bg-[#83afdf] px-6 py-5">
+                      <img
+                        src={modalHeaderLogoUrl}
+                        alt="Data Sheet Solutions logo"
+                        width={50}
+                        height={50}
+                        className="h-[50px] w-[50px] object-contain"
+                      />
+                      <h2 className="text-4xl font-semibold text-slate-900">Login</h2>
                     </div>
 
-                    {hasMultipleChildren ? (
-                      <>
-                        {/* Title and description - center aligned */}
-                        <div className="mb-4 flex w-full flex-col items-center text-center">{titleContent}</div>
+                    <div className="mx-auto flex w-full flex-col items-center space-y-8 px-6 py-8">
+                      {hasMultipleChildren ? (
+                        <>
+                          {/* Title and description - center aligned */}
+                          <div className="mb-4 flex w-full flex-col items-center text-center">{titleContent}</div>
 
-                        {/* Form content - left aligned */}
-                        <div className="w-full">{formContent}</div>
-                      </>
-                    ) : (
-                      // Single child - use original behavior
-                      <div className="w-full">{actualChildren}</div>
-                    )}
+                          {/* Form content - left aligned */}
+                          <div className="w-full">{formContent}</div>
+                        </>
+                      ) : (
+                        // Single child - use original behavior
+                        <div className="w-full">{actualChildren}</div>
+                      )}
 
-                    <div className="flex flex-row justify-between"></div>
+                      <div className="flex flex-row justify-between"></div>
+                    </div>
                   </div>
                 </Card>
               </div>

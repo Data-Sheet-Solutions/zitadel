@@ -21,8 +21,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const configuredBasePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  const normalizedBasePath = configuredBasePath
+    ? `${configuredBasePath.startsWith("/") ? "" : "/"}${configuredBasePath.replace(/\/$/, "")}`
+    : "";
+  const adminBackgroundImageUrl = `${normalizedBasePath}/admin-back.jpg`;
+
   const backgroundImageStyle = {
-    backgroundImage: "url('/admin-back.jpg')",
+    backgroundImage: `url('${adminBackgroundImageUrl}')`,
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
