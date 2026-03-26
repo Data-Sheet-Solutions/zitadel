@@ -6,6 +6,11 @@ on:
       - custom-login-dss
     paths:
       - 'apps/login/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'nx.json'
+      - 'tsconfig*.json'
       - '.github/workflows/build-login.yml'
   workflow_dispatch:
 
@@ -24,6 +29,23 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build login app
+        run: pnpm exec nx build login
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
