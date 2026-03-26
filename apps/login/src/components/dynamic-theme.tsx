@@ -59,7 +59,7 @@ export function DynamicTheme({
                   <div className="flex min-h-[400px]">
                     {/* Left side: First child + branding */}
                     <div className="from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 flex w-1/2 flex-col justify-center bg-gradient-to-br p-4 lg:p-8">
-                      <div className="mx-auto max-w-[440px] space-y-8">
+                      <div className="mx-auto max-w-[580px] space-y-8">
                         {/* Logo and branding */}
                         {branding && (
                           <Logo
@@ -84,7 +84,7 @@ export function DynamicTheme({
 
                     {/* Right side: Second child (form) or single child if old format */}
                     <div className="flex w-1/2 items-center justify-center p-4 lg:p-8">
-                      <div className="w-full max-w-[440px]">
+                      <div className="w-full max-w-[580px]">
                         <div className="space-y-6">{hasLeftRightStructure ? rightContent : leftContent}</div>
                       </div>
                     </div>
@@ -101,7 +101,7 @@ export function DynamicTheme({
             const hasMultipleChildren = childArray.length > 1;
 
             return (
-              <div className="relative mx-auto w-full max-w-[440px] px-4 py-4">
+              <div className="relative mx-auto w-full max-w-[580px] px-4 py-4">
                 <Card padding="p-0" className="overflow-hidden shadow-2xl">
                   <div className="flex flex-col">
                     <div className="flex items-center gap-4 bg-[#83afdf] px-6 py-5">

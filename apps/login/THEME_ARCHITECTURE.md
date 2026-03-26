@@ -93,7 +93,7 @@ export function DynamicTheme({ children, branding }) {
         </div>
       ) : (
         // Top-to-bottom layout for mobile
-        <div className="flex-col max-w-[440px]">{children}</div>
+        <div className="flex-col max-w-[580px]">{children}</div>
       )}
     </ThemeWrapper>
   );

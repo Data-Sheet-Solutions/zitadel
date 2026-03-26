@@ -47,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   style={backgroundImageStyle}
                 >
                   <div className="pointer-events-none absolute inset-0 bg-black/25" aria-hidden="true" />
-                  <div className="relative z-10 mx-auto w-full max-w-[440px] py-8">
+                  <div className="relative z-10 mx-auto w-full max-w-[580px] py-8">
                     <Skeleton>
                       <div className="h-40"></div>
                     </Skeleton>
