@@ -25,11 +25,12 @@
   "loginname": {
     "title": "Welcome back!",
     "sdsTitle": "{organization} SDS Portal",
-    "description": "Enter your login details.",
+    "description": "Login below to access the administrative portal.",
+    "backToEmployeePortal": "Back to Employee Portal",
     "register": "Register new user",
     "submit": "Continue",
     "labels": {
-      "loginname": "Loginname",
+      "loginname": "Email Address",
       "username": "Username",
       "usernameOrPhoneNumber": "Username or phone number",
       "usernameOrEmail": "Username or email"

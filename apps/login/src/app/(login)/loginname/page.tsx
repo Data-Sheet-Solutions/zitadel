@@ -35,9 +35,11 @@ export default async function Page(props: { searchParams: Promise<Record<string 
   const resolvedOrganizationId = organization ?? defaultOrganizationId;
 
   let organizationName = defaultOrganization?.name ?? "";
+  let organizationDomainSuffix = suffix ?? defaultOrganization?.primaryDomain ?? "";
   if (organization) {
     const org = await getOrgById({ serviceConfig, organizationId: organization });
     organizationName = org?.name ?? organizationName;
+    organizationDomainSuffix = suffix ?? org?.primaryDomain ?? organizationDomainSuffix;
   }
   if (!organizationName) {
     organizationName = "your organization";
@@ -60,7 +62,7 @@ export default async function Page(props: { searchParams: Promise<Record<string 
         <h1>
           <Translated i18nKey="sdsTitle" namespace="loginname" data={{ organization: organizationName }} />
         </h1>
-        <p className="ztdl-p">
+        <p className="ztdl-p text-[1rem]">
           <Translated i18nKey="description" namespace="loginname" />
         </p>
       </div>
@@ -74,6 +76,7 @@ export default async function Page(props: { searchParams: Promise<Record<string 
             defaultOrganization={defaultOrganizationId}
             loginSettings={loginSettings}
             suffix={suffix}
+            organizationDomainSuffix={organizationDomainSuffix}
             submit={submit}
             allowRegister={!!loginSettings?.allowRegister}
           ></UsernameForm>

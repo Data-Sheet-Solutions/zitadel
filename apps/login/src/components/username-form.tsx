@@ -26,6 +26,7 @@ type Props = {
   organization?: string;
   defaultOrganization?: string;
   suffix?: string;
+  organizationDomainSuffix?: string;
   submit: boolean;
   allowRegister: boolean;
 };
@@ -36,6 +37,7 @@ export function UsernameForm({
   organization,
   defaultOrganization,
   suffix,
+  organizationDomainSuffix,
   loginSettings,
   submit,
   allowRegister,
@@ -87,14 +89,12 @@ export function UsernameForm({
     }
   }, [submit, loginName, organization, submitLoginName]);
 
-  let inputLabel = t("labels.loginname");
-  if (loginSettings?.disableLoginWithEmail && loginSettings?.disableLoginWithPhone) {
-    inputLabel = t("labels.username");
-  } else if (loginSettings?.disableLoginWithEmail) {
-    inputLabel = t("labels.usernameOrPhoneNumber");
-  } else if (loginSettings?.disableLoginWithPhone) {
-    inputLabel = t("labels.usernameOrEmail");
-  }
+  const normalizedDomainSuffix = organizationDomainSuffix
+    ?.trim()
+    .replace(/^@/, "")
+    .replace(/^https?:\/\//, "")
+    .replace(/\/.*$/, "");
+  const employeePortalHref = normalizedDomainSuffix ? `https://${normalizedDomainSuffix}` : undefined;
 
   return (
     <>
@@ -109,7 +109,8 @@ export function UsernameForm({
             spellCheck={false}
             autoFocus
             {...register("loginName", { required: t("required.loginName") })}
-            label={inputLabel}
+            label={t("labels.loginname")}
+            labelClassName="text-[1rem] font-bold leading-5"
             data-testid="username-text-input"
           />
           {allowRegister && (
@@ -141,7 +142,7 @@ export function UsernameForm({
           </div>
         )}
         <div className="mt-4 flex w-full flex-row items-center">
-          <BackButton data-testid="back-button" />
+          <BackButton data-testid="back-button" href={employeePortalHref} label={t("backToEmployeePortal")} />
           <span className="flex-grow"></span>
           <Button
             data-testid="submit-button"

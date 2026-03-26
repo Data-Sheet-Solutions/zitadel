@@ -7,6 +7,7 @@ import { ChangeEvent, DetailedHTMLProps, forwardRef, InputHTMLAttributes, ReactN
 
 export type TextInputProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
   label: string;
+  labelClassName?: string;
   placeholder?: string;
   defaultValue?: string;
   error?: string | ReactNode;
@@ -38,7 +39,20 @@ function getDefaultInputRoundness(): string {
 
 export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
   (
-    { label, placeholder, defaultValue, required = false, error, disabled, success, onChange, onBlur, roundness, ...props },
+    {
+      label,
+      labelClassName,
+      placeholder,
+      defaultValue,
+      required = false,
+      error,
+      disabled,
+      success,
+      onChange,
+      onBlur,
+      roundness,
+      ...props
+    },
     ref,
   ) => {
     // Use theme-based roundness if not explicitly provided
@@ -46,7 +60,9 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
 
     return (
       <label className="relative flex flex-col text-12px text-input-light-label dark:text-input-dark-label">
-        <span className={`mb-1 leading-3 ${error ? "text-warn-light-500 dark:text-warn-dark-500" : ""}`}>
+        <span
+          className={`mb-1 leading-3 ${labelClassName ?? ""} ${error ? "text-warn-light-500 dark:text-warn-dark-500" : ""}`}
+        >
           {label} {required && "*"}
         </span>
         <input
