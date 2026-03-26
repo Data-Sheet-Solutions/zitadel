@@ -1,0 +1,39 @@
+# .github/workflows/deploy-login.yml
+name: Deploy custom ZITADEL Login
+
+on:
+  workflow_run:
+    workflows: ["Build and publish custom ZITADEL Login"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DROPLET_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to droplet
+        run: |
+          ssh ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_HOST }} << 'EOF'
+            set -e
+            cd /opt/zitadel
+
+            echo "${{ secrets.GHCR_CLASSIC_PAT }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+
+            docker compose -f docker-compose.runtime.yml pull zitadel-login
+            docker compose -f docker-compose.runtime.yml up -d --force-recreate zitadel-login
+
+            docker compose -f docker-compose.runtime.yml ps
+          EOF
