@@ -112,7 +112,7 @@ export function DynamicTheme({
                         height={50}
                         className="h-[50px] w-[50px] object-contain"
                       />
-                      <h2 className="text-4xl font-semibold text-slate-900">Login</h2>
+                      <h2 className="text-3xl font-normal text-slate-900">Login</h2>
                     </div>
 
                     <div className="mx-auto flex w-full flex-col items-center space-y-8 px-6 py-8">
