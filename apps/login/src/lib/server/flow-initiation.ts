@@ -338,20 +338,24 @@ export async function handleOIDCFlowInitiation(params: FlowInitiationParams): Pr
       let selectedSession = await findValidSession({ serviceConfig, sessions, authRequest, organization });
 
       if (!selectedSession || !selectedSession.id) {
-        return gotoAccounts({
+        return gotoLoginname({
           request,
-          requestId: `oidc_${authRequest.id}`,
+          requestId,
           organization,
+          suffix,
+          loginName: authRequest.loginHint,
         });
       }
 
       const cookie = sessionCookies.find((cookie) => cookie.id === selectedSession.id);
 
       if (!cookie || !cookie.id || !cookie.token) {
-        return gotoAccounts({
+        return gotoLoginname({
           request,
-          requestId: `oidc_${authRequest.id}`,
+          requestId,
           organization,
+          suffix,
+          loginName: authRequest.loginHint,
         });
       }
 
@@ -375,18 +379,22 @@ export async function handleOIDCFlowInitiation(params: FlowInitiationParams): Pr
           return NextResponse.redirect(callbackUrl);
         } else {
           logger.info("could not create callback, redirect user to choose other account");
-          return gotoAccounts({
+          return gotoLoginname({
             request,
-            organization,
             requestId,
+            organization,
+            suffix,
+            loginName: authRequest.loginHint,
           });
         }
       } catch (error) {
         logger.error("Error creating callback:", { error });
-        return gotoAccounts({
+        return gotoLoginname({
           request,
           requestId,
           organization,
+          suffix,
+          loginName: authRequest.loginHint,
         });
       }
     }
