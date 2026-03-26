@@ -3,7 +3,7 @@ import { SignInWithIdp } from "@/components/sign-in-with-idp";
 import { Translated } from "@/components/translated";
 import { UsernameForm } from "@/components/username-form";
 import { getServiceConfig } from "@/lib/service-url";
-import { getActiveIdentityProviders, getBrandingSettings, getDefaultOrg, getLoginSettings } from "@/lib/zitadel";
+import { getActiveIdentityProviders, getBrandingSettings, getDefaultOrg, getLoginSettings, getOrgById } from "@/lib/zitadel";
 import { Organization } from "@zitadel/proto/zitadel/org/v2/org_pb";
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
@@ -26,30 +26,39 @@ export default async function Page(props: { searchParams: Promise<Record<string 
   const _headers = await headers();
   const { serviceConfig } = getServiceConfig(_headers);
 
-  let defaultOrganization;
+  let defaultOrganization: Organization | null = null;
   if (!organization) {
-    const org: Organization | null = await getDefaultOrg({ serviceConfig });
-    if (org) {
-      defaultOrganization = org.id;
-    }
+    defaultOrganization = await getDefaultOrg({ serviceConfig });
   }
 
-  const loginSettings = await getLoginSettings({ serviceConfig, organization: organization ?? defaultOrganization });
+  const defaultOrganizationId = defaultOrganization?.id;
+  const resolvedOrganizationId = organization ?? defaultOrganizationId;
+
+  let organizationName = defaultOrganization?.name ?? "";
+  if (organization) {
+    const org = await getOrgById({ serviceConfig, organizationId: organization });
+    organizationName = org?.name ?? organizationName;
+  }
+  if (!organizationName) {
+    organizationName = "your organization";
+  }
+
+  const loginSettings = await getLoginSettings({ serviceConfig, organization: resolvedOrganizationId });
 
   const identityProviders = await getActiveIdentityProviders({
     serviceConfig,
-    orgId: organization ?? defaultOrganization,
+    orgId: resolvedOrganizationId,
   }).then((resp) => {
     return resp.identityProviders;
   });
 
-  const branding = await getBrandingSettings({ serviceConfig, organization: organization ?? defaultOrganization });
+  const branding = await getBrandingSettings({ serviceConfig, organization: resolvedOrganizationId });
 
   return (
     <DynamicTheme branding={branding}>
       <div className="flex flex-col space-y-4">
         <h1>
-          <Translated i18nKey="title" namespace="loginname" />
+          <Translated i18nKey="sdsTitle" namespace="loginname" data={{ organization: organizationName }} />
         </h1>
         <p className="ztdl-p">
           <Translated i18nKey="description" namespace="loginname" />
@@ -62,7 +71,7 @@ export default async function Page(props: { searchParams: Promise<Record<string 
             loginName={loginName}
             requestId={requestId}
             organization={organization} // stick to "organization" as we still want to do user discovery based on the searchParams not the default organization, later the organization is determined by the found user
-            defaultOrganization={defaultOrganization}
+            defaultOrganization={defaultOrganizationId}
             loginSettings={loginSettings}
             suffix={suffix}
             submit={submit}

@@ -24,6 +24,7 @@
   },
   "loginname": {
     "title": "Welcome back!",
+    "sdsTitle": "Log in to the {organization} SDS Portal",
     "description": "Enter your login details.",
     "register": "Register new user",
     "submit": "Continue",

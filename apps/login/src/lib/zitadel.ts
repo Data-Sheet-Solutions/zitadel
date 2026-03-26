@@ -853,6 +853,35 @@ export async function getDefaultOrg({ serviceConfig }: WithServiceConfig): Promi
     : fetcher();
 }
 
+export async function getOrgById({
+  serviceConfig,
+  organizationId,
+}: WithServiceConfig<{ organizationId: string }>): Promise<Organization | null> {
+  const fetcher = async () => {
+    const orgService: Client<typeof OrganizationService> = await createServiceForHost(OrganizationService, serviceConfig);
+
+    return orgService
+      .listOrganizations(
+        {
+          queries: [
+            {
+              query: {
+                case: "idQuery",
+                value: { id: organizationId },
+              },
+            },
+          ],
+        },
+        {},
+      )
+      .then((resp) => (resp?.result && resp.result[0] ? resp.result[0] : null));
+  };
+
+  return useCache
+    ? freshCache(`getOrgById-${organizationId}`, fetcher, getTTLForKey("getOrgById", defaultCacheTTL))
+    : fetcher();
+}
+
 export async function getOrgsByDomain({ serviceConfig, domain }: WithServiceConfig<{ domain: string }>) {
   const orgService: Client<typeof OrganizationService> = await createServiceForHost(OrganizationService, serviceConfig);
 

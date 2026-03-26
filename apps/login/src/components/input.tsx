@@ -7,7 +7,6 @@ import { ChangeEvent, DetailedHTMLProps, forwardRef, InputHTMLAttributes, ReactN
 
 export type TextInputProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> & {
   label: string;
-  suffix?: string;
   placeholder?: string;
   defaultValue?: string;
   error?: string | ReactNode;
@@ -39,20 +38,7 @@ function getDefaultInputRoundness(): string {
 
 export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
   (
-    {
-      label,
-      placeholder,
-      defaultValue,
-      suffix,
-      required = false,
-      error,
-      disabled,
-      success,
-      onChange,
-      onBlur,
-      roundness,
-      ...props
-    },
+    { label, placeholder, defaultValue, required = false, error, disabled, success, onChange, onBlur, roundness, ...props },
     ref,
   ) => {
     // Use theme-based roundness if not explicitly provided
@@ -76,18 +62,6 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
           onBlur={(e) => onBlur && onBlur(e)}
           {...props}
         />
-
-        {suffix && (
-          <span
-            className={clsx(
-              "absolute bottom-[22px] right-[3px] z-30 translate-y-1/2 transform bg-background-light-500 p-2 dark:bg-background-dark-500",
-              // Extract just the roundness part for the suffix (no padding)
-              actualRoundness.split(" ")[0], // Take only the first part (rounded-full, rounded-md, etc.)
-            )}
-          >
-            @{suffix}
-          </span>
-        )}
 
         <div className="leading-14.5px h-14.5px flex flex-row items-center text-12px text-warn-light-500 dark:text-warn-dark-500">
           <span>{error ? error : " "}</span>

@@ -111,7 +111,6 @@ export function UsernameForm({
             {...register("loginName", { required: t("required.loginName") })}
             label={inputLabel}
             data-testid="username-text-input"
-            suffix={suffix}
           />
           {allowRegister && (
             <button

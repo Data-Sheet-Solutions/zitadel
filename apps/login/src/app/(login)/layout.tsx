@@ -21,6 +21,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const backgroundImageStyle = {
+    backgroundImage: "url('/admin-back.jpg')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+  };
+
   return (
     <html className={`${lato.className}`} suppressHydrationWarning>
       <head />
@@ -31,8 +38,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               fallback={
                 <BackgroundWrapper
                   className={`relative flex min-h-screen flex-col justify-center bg-background-light-600 dark:bg-background-dark-600`}
+                  style={backgroundImageStyle}
                 >
-                  <div className="relative mx-auto w-full max-w-[440px] py-8">
+                  <div className="pointer-events-none absolute inset-0 bg-black/25" aria-hidden="true" />
+                  <div className="relative z-10 mx-auto w-full max-w-[440px] py-8">
                     <Skeleton>
                       <div className="h-40"></div>
                     </Skeleton>
@@ -43,8 +52,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <LanguageProvider>
                 <BackgroundWrapper
                   className={`relative flex min-h-screen flex-col justify-center bg-background-light-600 dark:bg-background-dark-600`}
+                  style={backgroundImageStyle}
                 >
-                  <div className="relative mx-auto w-full max-w-[1100px] py-8">
+                  <div className="pointer-events-none absolute inset-0 bg-black/25" aria-hidden="true" />
+                  <div className="relative z-10 mx-auto w-full max-w-[1100px] py-8">
                     <div>{children}</div>
                   </div>
                 </BackgroundWrapper>
