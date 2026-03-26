@@ -1,0 +1,10 @@
+
+For ongoing updates, your loop becomes:
+
+change code in apps/login
+push to custom-login-dss
+GitHub Action builds new image
+on droplet:
+Update SHA tag to the new package SHA in the runtime.yaml file zitadel-login section 
+docker compose -f docker-compose.runtime.yml pull zitadel-login
+docker compose -f docker-compose.runtime.yml up -d --force-recreate zitadel-login
