@@ -1,0 +1,13 @@
+🔄 How to use upstream (important)
+
+When Zitadel updates, you can pull changes like this:
+
+git fetch upstream
+git checkout main
+git merge upstream/main
+
+Or if you're working on your custom branch:
+
+git checkout custom-login-dss
+git fetch upstream
+git merge upstream/main
