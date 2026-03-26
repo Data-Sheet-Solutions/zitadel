@@ -5,6 +5,8 @@ on:
   workflow_run:
     workflows: ["Build and publish custom ZITADEL Login"]
     types: [completed]
+    branches:
+      - custom-login-dss
   workflow_dispatch:
 
 permissions:
