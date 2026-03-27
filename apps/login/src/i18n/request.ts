@@ -5,6 +5,16 @@ import deepmerge from "deepmerge";
 import { getRequestConfig } from "next-intl/server";
 import { headers } from "next/headers";
 
+/** Fixed description copy for the loginname step in the hosted login flow. */
+const HARDCODED_LOGINNAME_DESCRIPTION = "Login to your Administrative Dashboard";
+/** Fixed field label copy for the loginname input in the hosted login flow. */
+const HARDCODED_LOGINNAME_LABEL = "Email Address";
+
+/**
+ * Resolves login-app i18n messages and enforces fixed copy for the loginname step.
+ *
+ * @returns Request config containing locale and merged translation messages.
+ */
 export default getRequestConfig(async () => {
   const locale = "en";
 
@@ -41,9 +51,20 @@ export default getRequestConfig(async () => {
   }
 
   const fallbackMessages = (await import(`../../locales/${fallback}.json`)).default;
+  const mergedMessages = deepmerge.all([fallbackMessages, localeMessages, customMessages]) as Record<string, any>;
 
   return {
     locale,
-    messages: deepmerge.all([fallbackMessages, localeMessages, customMessages]) as Record<string, string>,
+    messages: deepmerge.all([
+      mergedMessages,
+      {
+        loginname: {
+          description: HARDCODED_LOGINNAME_DESCRIPTION,
+          labels: {
+            loginname: HARDCODED_LOGINNAME_LABEL,
+          },
+        },
+      },
+    ]) as Record<string, string>,
   };
 });

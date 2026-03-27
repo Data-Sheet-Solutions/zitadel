@@ -25,12 +25,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const normalizedBasePath = configuredBasePath
     ? `${configuredBasePath.startsWith("/") ? "" : "/"}${configuredBasePath.replace(/\/$/, "")}`
     : "";
-  const adminBackgroundImageUrl = `${normalizedBasePath}/admin-back.jpg`;
+  const adminBackgroundImageUrl = `${normalizedBasePath}/login-background.jpg`;
 
   const backgroundImageStyle = {
     backgroundImage: `url('${adminBackgroundImageUrl}')`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: "left top",
     backgroundRepeat: "no-repeat",
   };
 
